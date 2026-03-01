@@ -1,0 +1,5 @@
+{
+  "name": "claude-wea",
+  "version": "0.1.0",
+  "description": "Forward Claude Code interactive prompts to Telegram for remote control"
+}
