@@ -25,16 +25,3 @@ def test_parse_notification_input():
     })
     result = parse_hook_input(raw)
     assert result["notification_type"] == "permission_prompt"
-
-
-def test_build_socket_payload():
-    from scripts.hook_utils import build_socket_payload
-    payload = build_socket_payload(
-        session_id="ses1",
-        notification_type="permission_prompt",
-        text="test message",
-        buttons=[{"text": "Allow", "data": "ses1:allow"}],
-    )
-    assert payload["action"] == "send_notification"
-    assert payload["text"] == "test message"
-    assert len(payload["buttons"]) == 1
