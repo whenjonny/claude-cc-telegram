@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Unified notification hook: dispatch to TG and/or WEA channels."""
+"""Unified notification hook: TG via daemon socket, WEA via direct HTTP."""
 import os
 import sys
 
@@ -7,11 +7,13 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from bot import tg_client, wea_client
 from bot.config import load_config
-from bot.formatter import format_notification
-from scripts.hook_utils import read_stdin
+from bot.formatter import format_notification, format_tg_notification
+from scripts.hook_utils import read_stdin, build_socket_payload, send_to_bot
 
 
-def dispatch_notification(config: dict, text: str) -> bool:
+def dispatch_notification(config: dict, session_id: str,
+                          notification_type: str, message: str,
+                          title: str, project: str) -> bool:
     channels = config.get("channels", ["tg"])
     any_success = False
 
@@ -19,11 +21,24 @@ def dispatch_notification(config: dict, text: str) -> bool:
         if ch == "tg":
             token = config.get("telegram_bot_token")
             chat_id = config.get("telegram_chat_id")
-            if token and chat_id:
+            if not (token and chat_id):
+                continue
+            # Try daemon socket first (supports buttons)
+            text, buttons = format_tg_notification(
+                notification_type, message, title, session_id, project,
+            )
+            payload = build_socket_payload(session_id, text, buttons)
+            if send_to_bot(payload):
+                any_success = True
+            else:
+                # Fallback: direct HTTP (text-only)
                 if tg_client.send_message(token, chat_id, text):
                     any_success = True
 
         elif ch == "wea":
+            text = format_notification(
+                notification_type, message, title, session_id, project,
+            )
             if wea_client.send_message(
                 base_url=config.get("wea_base_url", "https://openapi.difft.org"),
                 app_id=config.get("wea_app_id", ""),
@@ -51,15 +66,8 @@ def main():
 
     project = os.path.basename(cwd) if cwd else "unknown"
 
-    text = format_notification(
-        notification_type=notification_type,
-        message=message,
-        title=title,
-        session_id=session_id,
-        project=project,
-    )
-
-    if dispatch_notification(config, text):
+    if dispatch_notification(config, session_id, notification_type,
+                             message, title, project):
         sys.exit(0)
     else:
         sys.exit(1)

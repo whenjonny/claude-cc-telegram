@@ -2,7 +2,7 @@ import json
 import os
 from datetime import datetime, timezone
 
-SESSIONS_DIR = os.path.expanduser("~/.claude_wea/sessions")
+from bot.config import SESSIONS_DIR
 
 
 def register_session(session_id: str, tmux_pane: str, cwd: str):

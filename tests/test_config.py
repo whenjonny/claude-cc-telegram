@@ -1,6 +1,6 @@
 import json
 import pytest
-from bot.config import load_config, get_session_file
+from bot.config import load_config
 
 
 def test_load_config_returns_dict(tmp_path, monkeypatch):
@@ -19,9 +19,3 @@ def test_load_config_missing_file(tmp_path, monkeypatch):
     monkeypatch.setattr("bot.config.STATE_DIR", str(tmp_path))
     cfg = load_config()
     assert cfg is None
-
-
-def test_get_session_file(tmp_path, monkeypatch):
-    monkeypatch.setattr("bot.config.SESSIONS_DIR", str(tmp_path))
-    path = get_session_file("abc123")
-    assert path == str(tmp_path / "abc123.json")

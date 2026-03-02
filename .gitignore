@@ -7,3 +7,5 @@ build/
 .env
 config.json
 .claude/
+docs/*.pdf
+docs/plans/

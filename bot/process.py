@@ -1,7 +1,7 @@
 import os
 import signal
 
-PID_FILE = os.path.expanduser("~/.claude_wea/bot.pid")
+from bot.config import PID_FILE
 
 
 def write_pid(pid: int):
@@ -37,3 +37,12 @@ def is_bot_running() -> bool:
         return False
     except PermissionError:
         return True
+
+
+def cleanup():
+    from bot.config import SOCK_FILE
+    clear_pid()
+    try:
+        os.remove(SOCK_FILE)
+    except FileNotFoundError:
+        pass
