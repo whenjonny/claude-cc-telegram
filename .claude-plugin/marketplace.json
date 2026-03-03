@@ -6,7 +6,7 @@
   "plugins": [
     {
       "name": "claude-wea",
-      "source": ".",
+      "source": "./",
       "description": "Forward Claude Code interactive prompts to Telegram for remote control",
       "version": "0.1.0"
     }
