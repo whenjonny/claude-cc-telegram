@@ -8,12 +8,14 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from bot import tg_client, wea_client
 from bot.config import load_config
 from bot.formatter import format_notification, format_tg_notification
+from bot.transcript import parse_elicitation_from_transcript
 from scripts.hook_utils import read_stdin, build_socket_payload, send_to_bot
 
 
 def dispatch_notification(config: dict, session_id: str,
                           notification_type: str, message: str,
-                          title: str, project: str) -> bool:
+                          title: str, project: str,
+                          questions: list[dict] | None = None) -> bool:
     channels = config.get("channels", ["tg"])
     any_success = False
 
@@ -26,6 +28,7 @@ def dispatch_notification(config: dict, session_id: str,
             # Try daemon socket first (supports buttons)
             text, buttons = format_tg_notification(
                 notification_type, message, title, session_id, project,
+                questions=questions,
             )
             payload = build_socket_payload(session_id, text, buttons)
             if send_to_bot(payload):
@@ -63,11 +66,18 @@ def main():
     message = data.get("message", "")
     title = data.get("title", "")
     cwd = data.get("cwd", "")
+    transcript_path = data.get("transcript_path", "")
 
     project = os.path.basename(cwd) if cwd else "unknown"
 
+    # Extract structured options from transcript for elicitation dialogs
+    questions = None
+    if notification_type == "elicitation_dialog" and transcript_path:
+        questions = parse_elicitation_from_transcript(transcript_path)
+
     if dispatch_notification(config, session_id, notification_type,
-                             message, title, project):
+                             message, title, project,
+                             questions=questions):
         sys.exit(0)
     else:
         sys.exit(1)
